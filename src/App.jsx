@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import './app.css';
+import './App.css';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
 // Pages & Dashboards
