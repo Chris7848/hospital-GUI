@@ -10,18 +10,28 @@ export default function NurseDashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [nurseName, setNurseName] = useState('Nurse');
 
-  // Load actual nurse name from session
+  // CLEANED EFFECT: No navigation allowed here
   useEffect(() => {
-    const user = JSON.parse(sessionStorage.getItem('activeUser'));
-    if (user && user.name) setNurseName(user.name);
+    const sessionData = sessionStorage.getItem('activeUser');
+    if (sessionData) {
+      try {
+        const user = JSON.parse(sessionData);
+        if (user && user.name) {
+          setNurseName(user.name);
+        }
+      } catch (e) {
+        console.error("Error loading nurse session:", e);
+      }
+    }
+   
   }, []);
 
-  // SEARCH LOGIC: Filter by Name, ID, or Room Number
-  const filteredPatients = mockDatabase.patients.filter(p => 
+  // SEARCH LOGIC
+  const filteredPatients = mockDatabase?.patients?.filter(p => 
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     p.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.room.includes(searchTerm)
-  );
+    p.room.toString().includes(searchTerm)
+  ) || [];
 
   const handlePatientClick = (patient) => {
     setSelectedPatient(patient);
@@ -29,7 +39,7 @@ export default function NurseDashboard() {
   };
 
   return (
-    <DashboardLayout userRole="nurse" title="Nursing Station">
+    <DashboardLayout userRole="nurse" title={`Nursing Station | ${nurseName}`}>
       
       {/* 1. WELCOME & QUICK SEARCH STRIP */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10">
@@ -55,7 +65,6 @@ export default function NurseDashboard() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-        
         {/* 2. MAIN WARD MONITORING GRID */}
         <div className="xl:col-span-2 space-y-6">
           <div className="flex justify-between items-center">
@@ -74,9 +83,7 @@ export default function NurseDashboard() {
                 onClick={() => handlePatientClick(patient)} 
                 className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-slate-100 relative overflow-hidden group hover:border-[#0F766E]/30 hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer"
               >
-                {/* Status Indicator Strip */}
                 <div className={`absolute left-0 top-0 bottom-0 w-2 ${patient.status === 'Critical' ? 'bg-rose-500' : 'bg-emerald-500'}`} />
-                
                 <div className="flex justify-between items-start mb-6">
                   <div className="pl-2">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Room {patient.room}</p>
@@ -86,20 +93,12 @@ export default function NurseDashboard() {
                     <HeartPulse size={18} />
                   </div>
                 </div>
-
                 <div className="grid grid-cols-2 gap-3 pl-2">
                   <VitalsCard label="Heart Rate" value={`${patient.hr} BPM`} color="rose" />
                   <VitalsCard label="Temp" value={patient.temp} color="amber" />
                 </div>
               </div>
             ))}
-
-            {/* Empty Search State */}
-            {filteredPatients.length === 0 && (
-              <div className="col-span-full py-12 text-center bg-white rounded-[2.5rem] border-2 border-dashed border-slate-100">
-                <p className="text-slate-400 font-bold italic">No patients found matching "{searchTerm}"</p>
-              </div>
-            )}
           </div>
         </div>
 
@@ -143,7 +142,7 @@ export default function NurseDashboard() {
   );
 }
 
-// Helper Components
+// Sub-components kept identical
 function VitalsCard({ label, value, color }) {
   const colorMap = {
     rose: 'text-rose-600 bg-rose-50',

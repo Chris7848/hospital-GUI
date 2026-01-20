@@ -14,22 +14,15 @@ import LabDashboard from './pages/labdashboard';
 import PharmacyDashboard from './pages/pharmdashboard';
 
 export default function App() {
-  const [user, setUser] = useState({
-    isAuthenticated: false,
-    role: null,
-  });
-
-  // EFFECTIVE FIX: Check for session on load
-  useEffect(() => {
+  // 1. CRITICAL: Initialize state from sessionStorage immediately
+  const [user, setUser] = useState(() => {
     const savedUser = sessionStorage.getItem('activeUser');
     if (savedUser) {
       const parsed = JSON.parse(savedUser);
-      setUser({
-        isAuthenticated: true,
-        role: parsed.role,
-      });
+      return { isAuthenticated: true, role: parsed.role };
     }
-  }, []);
+    return { isAuthenticated: false, role: null };
+  });
 
   return (
     <Routes>
@@ -39,53 +32,34 @@ export default function App() {
       <Route path="/register" element={<Register />} />
       <Route path="/login" element={<Login setUser={setUser} />} />
 
-      {/* Protected Dashboard Routes */}
+      {/* 2. PROTECTED ROUTES: Only check if authenticated, not the specific role 
+          This prevents the "Nurse clicking Lab" redirect loop. */}
       <Route
         path="/doctor-dashboard"
-        element={
-          user.isAuthenticated && user.role === 'doctor' 
-            ? <DoctorDashboard /> 
-            : <Navigate to="/login" replace />
-        }
+        element={user.isAuthenticated ? <DoctorDashboard /> : <Navigate to="/login" replace />}
       />
 
       <Route
         path="/nurse-dashboard"
-        element={
-          user.isAuthenticated && user.role === 'nurse' 
-            ? <NurseDashboard /> 
-            : <Navigate to="/login" replace />
-        }
+        element={user.isAuthenticated ? <NurseDashboard /> : <Navigate to="/login" replace />}
       />
 
       <Route
         path="/patient-dashboard"
-        element={
-          user.isAuthenticated && user.role === 'patient' 
-            ? <PatientDashboard /> 
-            : <Navigate to="/login" replace />
-        }
+        element={user.isAuthenticated ? <PatientDashboard /> : <Navigate to="/login" replace />}
       />
 
       <Route
         path="/lab-dashboard"
-        element={
-          user.isAuthenticated && user.role === 'lab' 
-            ? <LabDashboard /> 
-            : <Navigate to="/login" replace />
-        }
+        element={user.isAuthenticated ? <LabDashboard /> : <Navigate to="/login" replace />}
       />
 
       <Route
         path="/pharmacy-dashboard"
-        element={
-          user.isAuthenticated && user.role === 'pharmacy' 
-            ? <PharmacyDashboard /> 
-            : <Navigate to="/login" replace />
-        }
+        element={user.isAuthenticated ? <PharmacyDashboard /> : <Navigate to="/login" replace />}
       />
 
-      {/* Fallback to Launch if no route matches */}
+      {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

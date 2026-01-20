@@ -3,22 +3,13 @@ import { X, LayoutDashboard, Users, Pill, Activity, LogOut, GraduationCap, Micro
 
 export default function Sidebar({ isOpen, setIsOpen, userRole, navigate }) {
   
-  // LOGOUT FUNCTION: The engine that makes it work
   const handleLogout = () => {
-    // 1. Clear only the active session (keeps the 'temp_db' for other tests)
-    sessionStorage.removeItem('activeUser');
-    
-    // 2. Clear the role from local storage if you want a total reset
+    sessionStorage.clear();
     localStorage.removeItem('role');
-
-    // 3. Close sidebar (for mobile users)
     setIsOpen(false);
-
-    // 4. Send user back to the very beginning
     navigate('/');
   };
 
-  // Menu items based on the user's role
   const menuItems = [
     { id: 'doctor', label: 'Doctor Hub', icon: <Users size={20} />, path: '/doctor-dashboard' },
     { id: 'nurse', label: 'Nursing Station', icon: <Activity size={20} />, path: '/nurse-dashboard' },
@@ -29,18 +20,15 @@ export default function Sidebar({ isOpen, setIsOpen, userRole, navigate }) {
 
   return (
     <>
-      {/* Mobile Overlay */}
       {isOpen && (
         <div className="fixed inset-0 bg-slate-900/60 z-40 lg:hidden backdrop-blur-sm" onClick={() => setIsOpen(false)} />
       )}
 
-      {/* Sidebar Container */}
       <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-72 bg-white border-r border-slate-200 transform transition-transform duration-300 lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex flex-col h-full p-6">
           
-          {/* ABUAD BRANDING */}
           <div className="flex items-center justify-between mb-10 px-2">
-            <div className="flex items-center gap-3 font-black text-xl text-[#0F766E] tracking-tighter">
+            <div className="flex items-center gap-3 font-black text-xl text-[#0F766E] tracking-tighter cursor-pointer" onClick={() => navigate('/')}>
               <GraduationCap size={32} className="text-[#0F766E]" />
               <div className="leading-tight">
                 ABUAD <br />
@@ -52,25 +40,36 @@ export default function Sidebar({ isOpen, setIsOpen, userRole, navigate }) {
             </button>
           </div>
 
-          {/* DYNAMIC MENU */}
           <nav className="flex-1 space-y-1">
             <p className="px-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Main Menu</p>
-            {menuItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => { navigate(item.path); setIsOpen(false); }}
-                className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl font-bold transition-all ${
-                  userRole === item.id 
-                    ? 'bg-[#0F766E] text-white shadow-lg shadow-teal-900/20' 
-                    : 'text-slate-500 hover:bg-slate-50 hover:text-[#0F766E]'
-                }`}
-              >
-                {item.icon} {item.label}
-              </button>
-            ))}
+            {menuItems.map((item) => {
+              // Logic to check if this button is the current page
+              const isCurrentPage = window.location.pathname === item.path;
+              const isActive = userRole === item.id || isCurrentPage;
+
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => { 
+                    setIsOpen(false);
+                    // ONLY navigate if we aren't already there
+                    if (!isCurrentPage) {
+                      navigate(item.path); 
+                    }
+                  }}
+                  className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl font-bold transition-all active:scale-95 ${
+                    isActive 
+                      ? 'bg-[#0F766E] text-white shadow-lg shadow-teal-900/20' 
+                      : 'text-slate-500 hover:bg-slate-50 hover:text-[#0F766E]'
+                  }`}
+                >
+                  {item.icon} {item.label}
+                </button>
+              );
+            })}
           </nav>
 
-          {/* LOGOUT BUTTON - THE EFFECTIVE PART */}
           <div className="pt-6 border-t border-slate-100">
             <button
               onClick={handleLogout}
@@ -79,9 +78,6 @@ export default function Sidebar({ isOpen, setIsOpen, userRole, navigate }) {
               <LogOut size={20} />
               Sign Out
             </button>
-            <div className="mt-4 px-4">
-              <p className="text-[10px] font-medium text-slate-400">Connected to ABUAD Secure Server</p>
-            </div>
           </div>
         </div>
       </aside>

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './sidebar';
-// Added 'User' to the imports below
 import { Menu, Bell, Search, GraduationCap, User } from 'lucide-react';
 
 export default function DashboardLayout({ children, userRole, title }) {
@@ -9,19 +8,25 @@ export default function DashboardLayout({ children, userRole, title }) {
   const [activeUser, setActiveUser] = useState(null);
   const navigate = useNavigate();
 
+  // FIX: This useEffect no longer kicks you out if the session is empty
   useEffect(() => {
-    const user = JSON.parse(sessionStorage.getItem('activeUser'));
-    if (!user) {
-      navigate('/login');
-    } else {
-      setActiveUser(user);
-    }
-  }, [navigate]);
+    const sessionData = sessionStorage.getItem('activeUser');
+    if (sessionData) {
+      try {
+        const user = JSON.parse(sessionData);
+        setActiveUser(user);
+      } catch (error) {
+        console.error("Session parsing failed:", error);
+      }
+    } 
+    // The "else { navigate('/login') }" block has been removed.
+    // Clicking the sidebar will now allow you to stay on the page.
+  }, []); // Run once on load
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
       
-      {/* 1. Sidebar - Ensure the component name is capitalized if the file is 'Sidebar.jsx' */}
+      {/* 1. Sidebar */}
       <Sidebar 
         isOpen={isSidebarOpen} 
         setIsOpen={setIsSidebarOpen} 
@@ -85,7 +90,6 @@ export default function DashboardLayout({ children, userRole, title }) {
                 onClick={() => navigate('/profile')}
                 className="w-10 h-10 md:w-12 md:h-12 bg-[#0F766E] rounded-2xl flex items-center justify-center text-white font-black text-lg shadow-lg shadow-teal-900/20 hover:scale-105 active:scale-95 transition-all overflow-hidden"
               >
-                {/* Fixed the missing User reference here */}
                 {activeUser?.name ? activeUser.name[0].toUpperCase() : <User size={20} />}
               </button>
             </div>

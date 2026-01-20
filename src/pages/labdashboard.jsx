@@ -1,8 +1,35 @@
-import React, { useState } from 'react';
-import { TestTube, FlaskConical, Search, Filter, Menu, Bell, Settings, LogOut, LayoutDashboard, Beaker, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { TestTube, FlaskConical, Search, Filter, Menu, Bell, Settings, LogOut, LayoutDashboard, Beaker, ChevronRight, GraduationCap } from 'lucide-react';
 
 export default function LabDashboard() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  // 1. UPDATED: Default to 'Lab Staff' so the UI stays stable if session is empty
+  const [labStaffName, setLabStaffName] = useState('Lab Staff');
+  const navigate = useNavigate();
+
+  // 2. UPDATED: Removed navigate('/login') so you stay on the page
+  useEffect(() => {
+    try {
+      const sessionData = sessionStorage.getItem('activeUser');
+      if (sessionData) {
+        const user = JSON.parse(sessionData);
+        if (user && user.name) {
+          setLabStaffName(user.name);
+        }
+      }
+    } catch (error) {
+      console.error("Session parse error:", error);
+    }
+  }, []); // Run once on mount
+
+  const handleSignOut = () => {
+    sessionStorage.removeItem('activeUser');
+    localStorage.removeItem('role');
+    navigate('/login');
+  };
 
   const testOrders = [
     { id: "LAB-901", patient: "Alice Zhang", test: "Complete Blood Count", status: "In Progress", priority: "High", time: "10 mins ago" },
@@ -11,130 +38,136 @@ export default function LabDashboard() {
     { id: "LAB-904", patient: "James Wilson", test: "Blood Glucose", status: "Pending", priority: "High", time: "2 hrs ago" },
   ];
 
+  const filteredOrders = testOrders.filter(order => 
+    order.patient.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    order.test.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    order.id.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="flex min-h-screen bg-slate-50 font-sans">
       
-      {/* 1. PERMANENT SIDEBAR (Laptop) */}
-      <aside className="hidden lg:flex w-72 bg-indigo-900 flex-col p-6 text-white fixed h-full z-20">
-        <div className="flex items-center gap-3 mb-10 font-bold text-2xl tracking-tight">
-          <div className="bg-indigo-500 p-2 rounded-lg">
-            <FlaskConical size={24} />
+      {/* 1. SIDEBAR */}
+      <aside className="hidden lg:flex w-72 bg-white border-r border-slate-200 flex-col p-6 fixed h-full z-20">
+        <div className="flex items-center gap-3 mb-10 relative z-10">
+          <div className="bg-[#0F766E]/10 p-2.5 rounded-xl">
+            <GraduationCap size={28} className="text-[#0F766E]" />
           </div>
-          LabCore
+          <div className="leading-tight tracking-tighter font-black text-[#0F766E] text-xl">
+            ABUAD <br />
+            <span className="text-[10px] font-bold text-teal-600 uppercase tracking-widest block -mt-1">Hospital</span>
+          </div>
         </div>
         
         <nav className="space-y-1 flex-1">
-          <NavItem icon={<LayoutDashboard size={20}/>} label="Queue Overview" active />
-          <NavItem icon={<TestTube size={20}/>} label="Active Tests" />
-          <NavItem icon={<Beaker size={20}/>} label="Equipment Status" />
-          <NavItem icon={<Bell size={20}/>} label="Alerts" badge="4" />
+          <SidebarLink icon={<LayoutDashboard size={20}/>} label="Queue Overview" active />
+          <SidebarLink icon={<TestTube size={20}/>} label="Active Tests" />
+          <SidebarLink icon={<Beaker size={20}/>} label="Equipment" />
+          <SidebarLink icon={<Bell size={20}/>} label="Alerts" badge="4" />
         </nav>
 
-        <div className="pt-6 border-t border-indigo-800 space-y-1">
-          <NavItem icon={<Settings size={20}/>} label="Settings" />
-          <NavItem icon={<LogOut size={20}/>} label="Sign Out" />
+        <div className="pt-6 border-t border-slate-100 space-y-1">
+          <SidebarLink icon={<Settings size={20}/>} label="Station Settings" />
+          <div onClick={handleSignOut} className="flex items-center gap-3 px-4 py-3.5 rounded-2xl cursor-pointer text-rose-500 hover:bg-rose-50 transition-all">
+            <LogOut size={20} />
+            <span className="font-bold text-sm">Sign Out</span>
+          </div>
         </div>
       </aside>
 
       {/* 2. MAIN CONTENT AREA */}
       <div className="flex-1 lg:ml-72 flex flex-col min-w-0">
         
-        {/* Responsive Header */}
-        <header className="bg-indigo-700 lg:bg-white p-4 md:p-6 lg:border-b border-slate-200 text-white lg:text-slate-800 sticky top-0 z-10 transition-colors">
-          <div className="max-w-7xl mx-auto flex justify-between items-center">
-            <div className="flex items-center gap-4">
-              <button 
-                onClick={() => setIsSidebarOpen(true)}
-                className="lg:hidden p-2 hover:bg-white/10 rounded-lg"
-              >
-                <Menu size={24} />
-              </button>
-              <div>
-                <h1 className="text-xl font-bold">Lab Station 04</h1>
-                <p className="text-xs lg:text-slate-500 opacity-80 lg:opacity-100">Main Pathology Wing</p>
-              </div>
+        <header className="bg-white px-6 py-4 lg:py-8 flex justify-between items-center sticky top-0 z-10 lg:static border-b lg:border-none border-slate-200">
+          <div className="flex items-center gap-4">
+            <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-2 bg-slate-100 rounded-lg">
+              <Menu size={24} className="text-slate-600" />
+            </button>
+            <div className="hidden lg:block">
+              <h1 className="text-sm text-slate-500 font-medium tracking-wide">Pathology Wing • Station 04</h1>
+              <h2 className="text-2xl font-black text-slate-800 tracking-tight">Welcome, {labStaffName}</h2>
             </div>
+          </div>
 
-            <div className="flex items-center gap-2 md:gap-4">
-              <div className="hidden md:flex items-center bg-indigo-800/50 lg:bg-slate-100 rounded-xl px-4 py-2">
-                <Search size={18} className="text-indigo-300 lg:text-slate-400" />
-                <input 
-                  type="text" 
-                  placeholder="Test ID or Patient..." 
-                  className="bg-transparent border-none outline-none text-sm ml-2 w-48 placeholder:text-indigo-300 lg:placeholder:text-slate-400" 
-                />
-              </div>
-              <button className="p-2 bg-white/10 lg:bg-slate-100 rounded-full">
-                <Bell size={20} />
-              </button>
+          <div className="flex items-center gap-3">
+            <div className="hidden md:flex items-center bg-white border border-slate-200 rounded-2xl px-4 py-2.5 mr-2 shadow-sm focus-within:border-[#0F766E] transition-all">
+              <Search size={18} className="text-slate-400" />
+              <input 
+                type="text" 
+                placeholder="Find Patient or Test ID..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="bg-transparent border-none outline-none text-sm ml-2 w-48 lg:w-64 font-medium" 
+              />
             </div>
+            <button className="p-2.5 bg-white border border-slate-200 rounded-xl relative shadow-sm hover:bg-slate-50">
+              <Bell size={22} className="text-slate-600" />
+              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-[#0F766E] rounded-full border-2 border-white"></span>
+            </button>
           </div>
         </header>
 
-        {/* Lab Content */}
-        <main className="p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">
-          
-          {/* Lab Metrics (Horizontal on Laptop) */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <LabStat label="In Queue" value="24" color="bg-indigo-600" />
+        <main className="p-6 lg:p-10 max-w-7xl mx-auto w-full space-y-8">
+          {/* STATS */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+            <LabStat label="In Queue" value="24" color="bg-[#0F766E]" />
             <LabStat label="Processing" value="08" color="bg-amber-500" />
             <LabStat label="Urgent" value="03" color="bg-rose-600" />
             <LabStat label="Completed" value="42" color="bg-emerald-600" />
           </div>
 
-          {/* Test Orders Grid */}
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
             <div className="xl:col-span-2">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-bold text-slate-800">Recent Test Orders</h2>
-                <button className="flex items-center gap-2 text-sm font-bold text-indigo-600 hover:bg-indigo-50 px-3 py-1.5 rounded-lg transition-colors">
-                  <Filter size={16} /> Filter
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-black text-slate-800 tracking-tight flex items-center gap-2">
+                  <div className="w-2 h-6 bg-[#0F766E] rounded-full"></div> 
+                  Recent Test Orders
+                </h3>
+                <button className="text-[10px] font-black uppercase tracking-widest text-[#0F766E] flex items-center gap-2">
+                  <Filter size={14} /> Filter Queue
                 </button>
               </div>
 
-              <div className="space-y-3">
-                {testOrders.map((order) => (
-                  <div key={order.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all flex items-center justify-between group">
+              <div className="space-y-4">
+                {filteredOrders.map((order) => (
+                  <div key={order.id} className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl hover:border-[#0F766E]/20 transition-all flex items-center justify-between group cursor-pointer">
                     <div className="flex items-center gap-4">
-                      <div className={`p-4 rounded-2xl transition-transform group-hover:scale-110 ${
-                        order.status === 'Completed' ? 'bg-emerald-50 text-emerald-600' : 'bg-indigo-50 text-indigo-600'
+                      <div className={`p-4 rounded-2xl transition-all group-hover:bg-[#0F766E] group-hover:text-white ${
+                        order.status === 'Completed' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-400'
                       }`}>
                         <TestTube size={24} />
                       </div>
                       <div>
-                        <h4 className="font-bold text-slate-800">{order.test}</h4>
-                        <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">
-                          {order.patient} <span className="mx-2">•</span> {order.id}
+                        <h4 className="font-black text-slate-800 group-hover:text-[#0F766E] transition-colors">{order.test}</h4>
+                        <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.15em] mt-1">
+                          {order.patient} <span className="mx-2 text-slate-200">•</span> {order.id}
                         </p>
                       </div>
                     </div>
-                    
                     <div className="flex items-center gap-6">
                       <div className="text-right hidden sm:block">
-                        <span className={`text-[10px] px-2.5 py-1 rounded-full font-black uppercase tracking-widest ${
-                          order.priority === 'High' ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 text-slate-500'
+                        <span className={`text-[9px] px-3 py-1 rounded-lg font-black uppercase tracking-widest ${
+                          order.priority === 'High' ? 'bg-rose-50 text-rose-600' : 'bg-slate-100 text-slate-500'
                         }`}>
-                          {order.priority}
+                          {order.priority} Priority
                         </span>
                         <p className="text-[10px] mt-1 text-slate-400 font-bold">{order.time}</p>
                       </div>
-                      <button className="p-2 text-slate-300 hover:text-indigo-600 transition-colors">
-                        <ChevronRight size={20} />
-                      </button>
+                      <ChevronRight size={20} className="text-slate-200 group-hover:text-[#0F766E] transition-colors" />
                     </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Sidebar Tools (Desktop Only) */}
-            <div className="hidden xl:block space-y-6">
-              <div className="bg-white p-6 rounded-4xl border border-slate-200 shadow-sm">
-                <h3 className="font-bold text-slate-800 mb-4">Station Integrity</h3>
-                <div className="space-y-4">
+            {/* SIDEBAR TOOLS */}
+            <div className="space-y-6">
+              <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                <h3 className="font-black text-slate-800 mb-6 text-sm uppercase tracking-widest">Station Integrity</h3>
+                <div className="space-y-6">
                   <ProgressItem label="Centrifuge 01" value={85} />
                   <ProgressItem label="Reagent Stock" value={30} warning />
-                  <ProgressItem label="Analyzer 04" value={100} />
+                  <ProgressItem label="Auto-Analyzer" value={100} />
                 </div>
               </div>
             </div>
@@ -145,41 +178,41 @@ export default function LabDashboard() {
   );
 }
 
-// Helper Components
-function NavItem({ icon, label, active = false, badge }) {
+// Sub-components
+function SidebarLink({ icon, label, active = false, badge }) {
   return (
-    <div className={`flex items-center justify-between px-4 py-3 rounded-xl cursor-pointer transition-all ${
-      active ? 'bg-white/10 text-white' : 'text-indigo-200 hover:bg-white/5 hover:text-white'
+    <div className={`flex items-center justify-between px-4 py-3.5 rounded-2xl cursor-pointer transition-all ${
+      active ? 'bg-[#0F766E]/5 text-[#0F766E]' : 'text-slate-500 hover:bg-slate-50'
     }`}>
       <div className="flex items-center gap-3">
         {icon}
-        <span className="font-semibold text-sm">{label}</span>
+        <span className="font-black text-sm tracking-tight">{label}</span>
       </div>
-      {badge && <span className="bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">{badge}</span>}
+      {badge && <span className="bg-[#0F766E] text-white text-[10px] px-2 py-0.5 rounded-lg font-black">{badge}</span>}
     </div>
   );
 }
 
 function LabStat({ label, value, color }) {
   return (
-    <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm overflow-hidden relative group">
-      <div className={`absolute top-0 left-0 w-1 h-full ${color}`} />
-      <p className="text-2xl font-black text-slate-800">{value}</p>
-      <p className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">{label}</p>
+    <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm relative group cursor-default">
+      <div className={`absolute top-6 left-0 w-1.5 h-8 rounded-r-full ${color}`} />
+      <p className="text-3xl font-black text-slate-800 tracking-tighter">{value}</p>
+      <p className="text-[10px] uppercase font-black text-slate-400 tracking-widest mt-1">{label}</p>
     </div>
   );
 }
 
 function ProgressItem({ label, value, warning }) {
   return (
-    <div className="space-y-1.5">
-      <div className="flex justify-between text-[11px] font-bold uppercase tracking-wide">
-        <span className="text-slate-500">{label}</span>
-        <span className={warning ? 'text-rose-500' : 'text-indigo-600'}>{value}%</span>
+    <div className="space-y-2">
+      <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
+        <span className="text-slate-400">{label}</span>
+        <span className={warning ? 'text-rose-500' : 'text-[#0F766E]'}>{value}%</span>
       </div>
-      <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+      <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
         <div 
-          className={`h-full rounded-full ${warning ? 'bg-rose-500' : 'bg-indigo-600'}`} 
+          className={`h-full rounded-full transition-all duration-1000 ${warning ? 'bg-rose-500' : 'bg-[#0F766E]'}`} 
           style={{ width: `${value}%` }} 
         />
       </div>
